@@ -31,6 +31,6 @@ AirQualityFileAccessory.prototype.getState = function(callback) {
   })
 }
 
-TemperatureFileAccessory.prototype.getServices = function() {
+AirQualityFileAccessory.prototype.getServices = function() {
   return [this.service];
 }
