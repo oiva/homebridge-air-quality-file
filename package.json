@@ -1,0 +1,21 @@
+{
+  "name": "homebridge-air-quality-file",
+  "version": "1.0.0",
+  "description": "Simulate an air quality sensor from file",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "sds011",
+    "Air quality",
+    "AQI"
+  ],
+  "author": "Oiva Eskola <oiva.eskola@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.4.0"
+  }
+}
