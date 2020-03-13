@@ -4,9 +4,9 @@ let Service: any
 let Characteristic: any
 let AirQuality: any
 
-module.exports = (homebridge: any): void => {
+export default (homebridge: any): void => {
   Service = homebridge.hap.Service
-  Characteristic = homebridge.hap.Characteristic;
+  Characteristic = homebridge.hap.Characteristic
   AirQuality = Characteristic.AirQuality
 
   homebridge.registerAccessory(
@@ -21,65 +21,109 @@ const readFile = (filePath: string, callback: Function): void => {
     if (err) {
       return callback(err)
     }
-    const readings = JSON.parse(data)
+    const readings: Reading[] = JSON.parse(data)
     if (readings.length == 0) {
       return callback(null, null)
     }
-    const latest = readings[readings.length - 1]
-    return callback(null, latest)
+    const hourly = filterReadings(readings)
+    return callback(null, hourly)
+  })
+}
+
+const filterReadings = (readings: Reading[]): Reading[] => {
+  const now = new Date().getTime()
+  return readings.filter(reading => {
+    const time = Date.parse(reading.time)
+    return now - time < 3600000
   })
 }
 
 class AirQualityFileAccessory {
   // configuration
   log: Function
-  name: string
-  filePath: string
+  name: string = ''
+  filePath?: string
   sensor: any
+  limits10: number[]
+  limits25: number[]
 
-  constructor(log: Function, config: Record<string, string>) {
+  constructor(log: Function, config: Record<string, string | number[]>) {
     this.log = log
-    this.name = config['name']
-    this.filePath = config['file_path']
-
+    if (typeof config.name === 'string') {
+      this.name = config['name']
+    }
+    if (typeof config.file_path === 'string') {
+      this.filePath = config['file_path']
+    }
+    if (typeof config.limits_25 === 'object') {
+      this.limits25 = config.limits_25
+    } else {
+      this.limits25 = [15, 30, 55, 110]
+    }
+    if (typeof config.limits_10 === 'object') {
+      this.limits10 = this.limits10 = config['limits_10']
+    } else {
+      this.limits10 = [25, 50, 90, 180]
+    }
     const airQualityIndexName = config.airQualityIndexName || 'Air Quality'
-    this.sensor = new Service.AirQualitySensor(airQualityIndexName)
+
+    // not defined in tests
+    if (typeof Service !== 'undefined') {
+      this.sensor = new Service.AirQualitySensor(airQualityIndexName)
+    }
+    // defined in tests
+    if (typeof global.AirQuality !== 'undefined') {
+      AirQuality = global.AirQuality
+    }
   }
 
-  getAirQuality(density: number): number {
-    if (density === null) {
+  getAirQuality(readings: Reading[]): number {
+    const totalPM25 = readings.reduce(
+      (prev, reading): number => prev + parseFloat(reading.pm25),
+      0
+    )
+    const totalPM10 = readings.reduce(
+      (prev, reading): number => prev + parseFloat(reading.pm10),
+      0
+    )
+
+    const averagePM25 = totalPM25 / readings.length
+    const averagePM10 = totalPM10 / readings.length
+
+    if (averagePM25 === 0 && averagePM10 === 0) {
       return AirQuality.UNKNOWN
     }
-    if (density <= 25) {
+    if (averagePM25 <= this.limits25[0] && averagePM10 <= this.limits10[0]) {
       return AirQuality.EXCELLENT
     }
-    if (density <= 50) {
+    if (averagePM25 <= this.limits25[1] && averagePM10 <= this.limits10[1]) {
       return AirQuality.GOOD
     }
-    if (density <= 100) {
+    if (averagePM25 <= this.limits25[2] && averagePM10 <= this.limits10[2]) {
       return AirQuality.FAIR
     }
-    if (density <= 150) {
+    if (averagePM25 <= this.limits25[3] && averagePM10 <= this.limits10[3]) {
       return AirQuality.INFERIOR
     }
     return AirQuality.POOR
   }
 
   updateAirQualityIndex(callback: Function): void {
+    if (typeof this.filePath === 'undefined') {
+      return this.sensor.setCharacteristic(Characteristic.StatusFault, 1)
+    }
     readFile(
       this.filePath,
-      (
-        err: NodeJS.ErrnoException,
-        data: Record<string, string>
-      ): void => {
+      (err: NodeJS.ErrnoException, data: Reading[]): void => {
         if (err || data === null) {
           this.sensor.setCharacteristic(Characteristic.StatusFault, 1)
           callback(err)
           return
         }
-        var pm25 = parseFloat(data.pm25)
-        var pm10 = parseFloat(data.pm10)
-        var aiq = this.getAirQuality(pm10)
+        const latest = data[data.length - 1]
+        const pm25 = parseFloat(latest.pm25)
+        const pm10 = parseFloat(latest.pm10)
+        const aiq = this.getAirQuality(data)
         this.sensor.setCharacteristic(Characteristic.PM2_5Density, pm25)
         this.sensor.setCharacteristic(Characteristic.PM10Density, pm10)
         this.sensor.setCharacteristic(Characteristic.AirQuality, aiq)
@@ -95,3 +139,5 @@ class AirQualityFileAccessory {
     return [this.sensor]
   }
 }
+
+export { AirQualityFileAccessory, filterReadings }
