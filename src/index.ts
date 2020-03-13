@@ -1,9 +1,12 @@
-var fs = require('fs')
-var Service, Characteristic, AirQuality
+import * as fs from 'fs'
 
-module.exports = function(homebridge) {
+let Service: any
+let Characteristic: any
+let AirQuality: any
+
+module.exports = (homebridge: any): void => {
   Service = homebridge.hap.Service
-  Characteristic = homebridge.hap.Characteristic
+  Characteristic = homebridge.hap.Characteristic;
   AirQuality = Characteristic.AirQuality
 
   homebridge.registerAccessory(
@@ -13,31 +16,37 @@ module.exports = function(homebridge) {
   )
 }
 
-function AirQualityFileAccessory(log, config) {
-  this.log = log
-  this.name = config['name']
-  this.filePath = config['file_path']
-
-  var airQualityIndexName = config.airQualityIndexName || 'Air Quality'
-  this.sensor = new Service.AirQualitySensor(airQualityIndexName)
-}
-
-function readFile(filePath, callback) {
-  fs.readFile(filePath, 'utf8', function(err, data) {
+const readFile = (filePath: string, callback: Function): void => {
+  fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
       return callback(err)
     }
-    var readings = JSON.parse(data)
+    const readings = JSON.parse(data)
     if (readings.length == 0) {
       return callback(null, null)
     }
-    var latest = readings[readings.length - 1]
+    const latest = readings[readings.length - 1]
     return callback(null, latest)
   })
 }
 
-AirQualityFileAccessory.prototype = {
-  getAirQuality: function(density) {
+class AirQualityFileAccessory {
+  // configuration
+  log: Function
+  name: string
+  filePath: string
+  sensor: any
+
+  constructor(log: Function, config: Record<string, string>) {
+    this.log = log
+    this.name = config['name']
+    this.filePath = config['file_path']
+
+    const airQualityIndexName = config.airQualityIndexName || 'Air Quality'
+    this.sensor = new Service.AirQualitySensor(airQualityIndexName)
+  }
+
+  getAirQuality(density: number): number {
     if (density === null) {
       return AirQuality.UNKNOWN
     }
@@ -54,12 +63,15 @@ AirQualityFileAccessory.prototype = {
       return AirQuality.INFERIOR
     }
     return AirQuality.POOR
-  },
+  }
 
-  updateAirQualityIndex: function(callback) {
+  updateAirQualityIndex(callback: Function): void {
     readFile(
       this.filePath,
-      function(err, data) {
+      (
+        err: NodeJS.ErrnoException,
+        data: Record<string, string>
+      ): void => {
         if (err || data === null) {
           this.sensor.setCharacteristic(Characteristic.StatusFault, 1)
           callback(err)
@@ -72,11 +84,11 @@ AirQualityFileAccessory.prototype = {
         this.sensor.setCharacteristic(Characteristic.PM10Density, pm10)
         this.sensor.setCharacteristic(Characteristic.AirQuality, aiq)
         callback(null, aiq)
-      }.bind(this)
+      }
     )
-  },
+  }
 
-  getServices: function() {
+  getServices() {
     this.sensor
       .getCharacteristic(Characteristic.AirQuality)
       .on('get', this.updateAirQualityIndex.bind(this))

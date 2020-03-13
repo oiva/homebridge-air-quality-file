@@ -2,9 +2,11 @@
   "name": "homebridge-air-quality-file",
   "version": "1.0.0",
   "description": "Simulate an air quality sensor from file",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "rollup -c -w",
+    "build": "rollup -c",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "homebridge-plugin",
@@ -19,7 +21,16 @@
     "homebridge": ">=0.4.0"
   },
   "devDependencies": {
-    "prettier": "^1.19.1"
+    "@babel/core": "^7.8.7",
+    "@babel/preset-env": "^7.8.7",
+    "@babel/preset-typescript": "^7.8.3",
+    "@types/node": "^13.9.1",
+    "hap-nodejs": "^0.5.7",
+    "homebridge": "^0.4.52",
+    "prettier": "^1.19.1",
+    "rollup": "^2.0.6",
+    "rollup-plugin-babel": "^4.4.0",
+    "rollup-plugin-node-resolve": "^5.2.0"
   },
   "prettier": {
     "tabWidth": 2,
