@@ -36,5 +36,14 @@
     "tabWidth": 2,
     "semi": false,
     "singleQuote": true
-  }
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oiva/homebridge-air-quality-file.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oiva/homebridge-air-quality-file/issues"
+  },
+  "homepage": "https://github.com/oiva/homebridge-air-quality-file#readme"
 }
