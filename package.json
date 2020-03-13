@@ -1,7 +1,7 @@
 {
   "name": "homebridge-air-quality-file",
   "version": "1.0.0",
-  "description": "Simulate an air quality sensor from file",
+  "description": "Homebridge plugin to simulate an air quality sensor by reading values from file",
   "main": "dist/index.js",
   "scripts": {
     "dev": "rollup -c -w",
