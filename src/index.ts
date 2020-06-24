@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as https from 'https'
 
 let Service: any
 let Characteristic: any
@@ -17,20 +18,48 @@ export default (homebridge: any): void => {
 }
 
 const readFile = (filePath: string, callback: Function): void => {
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) {
-      return callback(err)
-    }
+  function parseData(data: string) {
     const readings: Reading[] = JSON.parse(data)
     if (readings.length == 0) {
       return callback(null, null)
     }
     const hourly = filterReadings(readings)
     return callback(null, hourly)
+  }
+
+  if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+    https.get(filePath, (resp) => {
+      let data = '';
+
+      resp.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      resp.on('end', () => {
+        return parseData(data);
+      });
+
+    }).on("error", (err) => {
+      return callback(err)
+    });
+
+    return;
+  }
+
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      return callback(err)
+    }
+
+    return parseData(data);
   })
 }
 
 const filterReadings = (readings: Reading[]): Reading[] => {
+  if (readings.length < 2) {
+    return readings;
+  }
+
   const now = new Date().getTime()
   return readings.filter(reading => {
     const time = Date.parse(reading.time)
