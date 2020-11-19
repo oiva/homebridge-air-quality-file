@@ -11,6 +11,8 @@ The plugin expects to get a list of readings in JSON form:
 ```
 You can use [this guide](https://hackernoon.com/how-to-measure-particulate-matter-with-a-raspberry-pi-75faa470ec35) to setup a Python script to read values from a SDS011 sensor to a file.
 
+For American users, make sure to change line 137 (jsonrow) of aqi.py (from the guide above). The date format must be changed from `%d.%m.%Y` to `%m.%d.%Y` for the plugin to work.
+
 ## Installation and configuration
 Run `npm install homebridge-air-quality-file`
 
