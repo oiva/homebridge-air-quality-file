@@ -144,7 +144,7 @@ class AirQualityFileAccessory {
     readFile(
       this.filePath,
       (err: NodeJS.ErrnoException, data: Reading[]): void => {
-        if (err || data === null) {
+        if (err || data === null || data.length == 0) {
           this.sensor.setCharacteristic(Characteristic.StatusFault, 1)
           callback(err)
           return
