@@ -63,7 +63,7 @@ const filterReadings = (readings: Reading[]): Reading[] => {
   const now = new Date().getTime()
   return readings.filter(reading => {
     const time = Date.parse(reading.time)
-    return now - time < durationToAverage
+    return now - time < this.durationToAverage
   })
 }
 
