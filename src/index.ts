@@ -63,7 +63,7 @@ const filterReadings = (readings: Reading[]): Reading[] => {
   const now = new Date().getTime()
   return readings.filter(reading => {
     const time = Date.parse(reading.time)
-    return now - time < 3600000
+    return now - time < this.durationToAverage
   })
 }
 
@@ -72,6 +72,7 @@ class AirQualityFileAccessory {
   log: Function
   name: string = ''
   filePath?: string
+  durationToAverage?: number
   sensor: any
   limits10: number[]
   limits25: number[]
@@ -93,6 +94,11 @@ class AirQualityFileAccessory {
       this.limits10 = this.limits10 = config['limits_10']
     } else {
       this.limits10 = [25, 50, 90, 180]
+    }
+    if (typeof config.duration_to_average === 'number') {
+      this.durationToAverage = config.duration_to_average
+    } else {
+      this.durationToAverage = 3600000
     }
     const airQualityIndexName = config.airQualityIndexName || 'Air Quality'
 
@@ -144,7 +150,7 @@ class AirQualityFileAccessory {
     readFile(
       this.filePath,
       (err: NodeJS.ErrnoException, data: Reading[]): void => {
-        if (err || data === null) {
+        if (err || data === null || data.length == 0) {
           this.sensor.setCharacteristic(Characteristic.StatusFault, 1)
           callback(err)
           return
