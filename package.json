@@ -4,10 +4,10 @@
   "description": "Homebridge plugin to simulate an air quality sensor by reading values from file",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "rollup -c -w",
-    "build": "rollup -c",
+    "dev": "./node_modules/rollup/dist/bin/rollup -c -w",
+    "build": "./node_modules/rollup/dist/bin/rollup -c",
     "prepublishOnly": "npm run build",
-    "test": "jest"
+    "test": "./node_modules/jest/bin/jest.js"
   },
   "keywords": [
     "homebridge-plugin",
