@@ -27,3 +27,10 @@ Add an acceessory configuration into your Homebridge config.json:
 ```
 
 Point the `file_path` to a file containing the readings.
+
+## Tests
+
+Run tests with Jest
+```
+npm run test
+```
