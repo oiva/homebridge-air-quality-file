@@ -55,7 +55,7 @@ const readFile = (filePath: string, callback: Function): void => {
   })
 }
 
-const filterReadings = (readings: Reading[]): Reading[] => {
+const filterReadings = (readings: Reading[], durationToAverage: number): Reading[] => {
   if (readings.length < 2) {
     return readings;
   }
@@ -63,7 +63,7 @@ const filterReadings = (readings: Reading[]): Reading[] => {
   const now = new Date().getTime()
   return readings.filter(reading => {
     const time = Date.parse(reading.time)
-    return now - time < this.durationToAverage
+    return now - time < durationToAverage
   })
 }
 

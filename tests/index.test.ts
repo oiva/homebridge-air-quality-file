@@ -20,7 +20,7 @@ test('filter readings based on time', () => {
     { pm25: '111', pm10: '180', time: hourAgo.toString() },
     { pm25: '111', pm10: '180', time: hourAgo.toString() },
     { pm25: '10', pm10: '20', time: now.toString() }
-  ])
+  ], fileAccessory.durationToAverage)
   expect(readings.length).toBe(1)
   expect(readings[0].pm25).toBe('10')
 })
