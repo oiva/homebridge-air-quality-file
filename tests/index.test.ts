@@ -1,4 +1,4 @@
-import { AirQualityFileAccessory, filterReadings } from '../src/index'
+import { AirQualityFileAccessory, filterReadings, readFile } from '../src/index'
 import '../src/types.d'
 
 global.AirQuality = {
@@ -10,17 +10,22 @@ global.AirQuality = {
   POOR: 5
 }
 
-const fileAccessory = new AirQualityFileAccessory(console.log, {})
+const fileAccessory = new AirQualityFileAccessory(console.log, {
+  durationToAverage: 3600000
+})
 const now = new Date()
 
 test('filter readings based on time', () => {
   const timeHourAgo = new Date().getTime() - 3600000
   const hourAgo = new Date(timeHourAgo)
-  const readings = filterReadings([
-    { pm25: '111', pm10: '180', time: hourAgo.toString() },
-    { pm25: '111', pm10: '180', time: hourAgo.toString() },
-    { pm25: '10', pm10: '20', time: now.toString() }
-  ], fileAccessory.durationToAverage)
+  const readings = filterReadings(
+    [
+      { pm25: '111', pm10: '180', time: hourAgo.toString() },
+      { pm25: '111', pm10: '180', time: hourAgo.toString() },
+      { pm25: '10', pm10: '20', time: now.toString() }
+    ],
+    fileAccessory.durationToAverage
+  )
   expect(readings.length).toBe(1)
   expect(readings[0].pm25).toBe('10')
 })
@@ -43,4 +48,50 @@ test('calculate poor air quality index', () => {
   ]
   const aiq = fileAccessory.getAirQuality(readings)
   expect(aiq).toBe(5)
+})
+
+test('read file', done => {
+  function callback(error, data) {
+    try {
+      expect(error).toBe(null)
+      let readings: Reading[] = JSON.parse(data)
+      expect(readings.length).toBe(2)
+      done()
+    } catch (error) {
+      done(error)
+    }
+  }
+  readFile('./tests/aqi.json', callback)
+})
+
+test('Fail to update air quality callback', done => {
+  // we need an AirQualityFileAccessory
+  const config = {
+    file_path: './tests/aqi.json',
+    duration_to_average: 3600000
+  }
+  const accessory = new AirQualityFileAccessory(console.log, config)
+
+  const callback = (error, data) => {
+    try {
+      expect(error).toBe('no readings')
+      done()
+    } catch (error) {
+      done(error)
+    }
+  }
+  accessory.updateAirQualityIndex(callback)
+})
+
+test('No file path given', done => {
+  // we need an AirQualityFileAccessory
+  const config = {
+    duration_to_average: 3600000
+  }
+  const accessory = new AirQualityFileAccessory(console.log, config)
+  const callback = (error, data) => {
+    expect(error).toBe('no file path given')
+    done()
+  }
+  const ret = accessory.updateAirQualityIndex(callback)
 })

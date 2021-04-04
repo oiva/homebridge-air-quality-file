@@ -18,15 +18,6 @@ export default (homebridge: any): void => {
 }
 
 const readFile = (filePath: string, callback: Function): void => {
-  function parseData(data: string) {
-    const readings: Reading[] = JSON.parse(data)
-    if (readings.length == 0) {
-      return callback(null, null)
-    }
-    const hourly = filterReadings(readings)
-    return callback(null, hourly)
-  }
-
   if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
     https.get(filePath, (resp) => {
       let data = '';
@@ -36,13 +27,12 @@ const readFile = (filePath: string, callback: Function): void => {
       });
 
       resp.on('end', () => {
-        return parseData(data);
+        return callback(null, data);
       });
 
     }).on("error", (err) => {
       return callback(err)
     });
-
     return;
   }
 
@@ -50,8 +40,7 @@ const readFile = (filePath: string, callback: Function): void => {
     if (err) {
       return callback(err)
     }
-
-    return parseData(data);
+    return callback(null, data);
   })
 }
 
@@ -105,6 +94,10 @@ class AirQualityFileAccessory {
     // not defined in tests
     if (typeof Service !== 'undefined') {
       this.sensor = new Service.AirQualitySensor(airQualityIndexName)
+    } else {
+      this.sensor = {
+        setCharacteristic: function(data) {}
+      }
     }
     // defined in tests
     if (typeof global.AirQuality !== 'undefined') {
@@ -145,20 +138,30 @@ class AirQualityFileAccessory {
 
   updateAirQualityIndex(callback: Function): void {
     if (typeof this.filePath === 'undefined') {
-      return this.sensor.setCharacteristic(Characteristic.StatusFault, 1)
+      this.sensor.setCharacteristic(Characteristic?.StatusFault, 1)
+      return callback('no file path given')
     }
     readFile(
       this.filePath,
-      (err: NodeJS.ErrnoException, data: Reading[]): void => {
-        if (err || data === null || data.length == 0) {
-          this.sensor.setCharacteristic(Characteristic.StatusFault, 1)
-          callback(err)
-          return
+      (err: NodeJS.ErrnoException, data: string): void => {
+        if (err) {
+          this.sensor.setCharacteristic(Characteristic?.StatusFault, 1)
+          return callback(err)
         }
-        const latest = data[data.length - 1]
+        
+        let readings: Reading[] = JSON.parse(data)
+        readings = filterReadings(readings, this.durationToAverage)
+
+        if (data === null || readings.length == 0) {
+          this.sensor.setCharacteristic(Characteristic?.StatusFault, 1)
+          return callback('no readings')
+        }
+        
+
+        const latest = readings[readings.length - 1]
         const pm25 = parseFloat(latest.pm25)
         const pm10 = parseFloat(latest.pm10)
-        const aiq = this.getAirQuality(data)
+        const aiq = this.getAirQuality(readings)
         this.sensor.setCharacteristic(Characteristic.PM2_5Density, pm25)
         this.sensor.setCharacteristic(Characteristic.PM10Density, pm10)
         this.sensor.setCharacteristic(Characteristic.AirQuality, aiq)
@@ -175,4 +178,4 @@ class AirQualityFileAccessory {
   }
 }
 
-export { AirQualityFileAccessory, filterReadings }
+export { AirQualityFileAccessory, filterReadings, readFile }
