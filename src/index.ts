@@ -61,12 +61,12 @@ class AirQualityFileAccessory {
   log: Function
   name: string = ''
   filePath?: string
-  durationToAverage?: number
+  durationToAverage: number
   sensor: any
   limits10: number[]
   limits25: number[]
 
-  constructor(log: Function, config: Record<string, string | number[]>) {
+  constructor(log: Function, config: Record<string, string | number | number[]>) {
     this.log = log
     if (typeof config.name === 'string') {
       this.name = config['name']
