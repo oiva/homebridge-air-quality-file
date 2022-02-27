@@ -148,15 +148,21 @@ class AirQualityFileAccessory {
           this.sensor.setCharacteristic(Characteristic?.StatusFault, 1)
           return callback(err)
         }
+
+        let readings: Reading[]
+        try {
+          readings = JSON.parse(data)
+        } catch(e) {
+          this.sensor.setCharacteristic(Characteristic?.StatusFault, 1)
+          return callback('parse error')
+        }
         
-        let readings: Reading[] = JSON.parse(data)
         readings = filterReadings(readings, this.durationToAverage)
 
         if (data === null || readings.length == 0) {
           this.sensor.setCharacteristic(Characteristic?.StatusFault, 1)
           return callback('no readings')
         }
-        
 
         const latest = readings[readings.length - 1]
         const pm25 = parseFloat(latest.pm25)
